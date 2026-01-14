@@ -22,3 +22,7 @@ Thumbs.db
 
 # ---- VSCode ----
 .vscode/
+
+# ---- excel ----
+*.xlsx
+*.xls
