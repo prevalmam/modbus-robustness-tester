@@ -22,7 +22,9 @@ classifiers = [
 	"Programming Language :: Python :: 3.12",
 	"Topic :: Multimedia :: Graphics"
 ]
-dependencies = []
+dependencies = [
+	"pyserial>=3.5"
+]
 dynamic = ["version"]
 
 [project.scripts]
