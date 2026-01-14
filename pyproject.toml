@@ -1,0 +1,37 @@
+[build-system]
+requires = [
+	"setuptools>=68",
+	"wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lifeline-clamp"
+description = "Batch-copy SVG drawings and generate synchronized dual-pane HTML viewers for the Lifeline clamp workflow."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = []
+classifiers = [
+	"Development Status :: 3 - Alpha",
+	"Intended Audience :: End Users/Desktop",
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Topic :: Multimedia :: Graphics"
+]
+dependencies = []
+dynamic = ["version"]
+
+[project.scripts]
+mb-robust = "modbus_robustness_tester.main:main"
+
+[tool.setuptools]
+packages = ["modbus_robustness_tester"]
+[tool.setuptools.package-dir]
+modbus_robustness_tester = "src/modbus_robustness_tester"
+
+[tool.setuptools.dynamic]
+version = { attr = "modbus_robustness_tester.__version__" }
