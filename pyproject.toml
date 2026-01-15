@@ -35,5 +35,8 @@ packages = ["modbus_robustness_tester"]
 [tool.setuptools.package-dir]
 modbus_robustness_tester = "src/modbus_robustness_tester"
 
+[tool.setuptools.package-data]
+modbus_robustness_tester = ["assets/icon.ico"]
+
 [tool.setuptools.dynamic]
 version = { attr = "modbus_robustness_tester.__version__" }

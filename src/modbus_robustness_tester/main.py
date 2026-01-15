@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import importlib.resources as resources
+import sys
 import threading
 import time
+from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -25,6 +28,8 @@ DEFAULT_WINDOW_WIDTH = 760
 DEFAULT_WINDOW_HEIGHT = 600
 PORT_WIDTH = 30
 RESULT_WIDTH = 55
+ICON_RELATIVE_PATH = Path("icons") / "icon.ico"
+ICON_RESOURCE = "assets/icon.ico"
 
 
 class ModbusMasterApp:
@@ -33,6 +38,7 @@ class ModbusMasterApp:
         self.root.title("Modbus Master")
         self.root.resizable(True, True)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._set_window_icon()
 
         self.serial = None
         self.port_var = tk.StringVar()
@@ -345,6 +351,34 @@ class ModbusMasterApp:
 
     def _on_tab_changed(self, _event: tk.Event) -> None:
         self._update_send_button_for_tab()
+
+    def _resolve_icon_path(self) -> str | None:
+        base_path = getattr(sys, "_MEIPASS", None)
+        if base_path:
+            candidate = Path(base_path) / ICON_RELATIVE_PATH
+            if candidate.is_file():
+                return str(candidate)
+        try:
+            icon_resource = resources.files("modbus_robustness_tester").joinpath(
+                ICON_RESOURCE
+            )
+            if icon_resource.is_file():
+                return str(icon_resource)
+        except Exception:
+            pass
+        candidate = Path(__file__).resolve().parents[2] / ICON_RELATIVE_PATH
+        if candidate.is_file():
+            return str(candidate)
+        return None
+
+    def _set_window_icon(self) -> None:
+        icon_path = self._resolve_icon_path()
+        if not icon_path:
+            return
+        try:
+            self.root.iconbitmap(icon_path)
+        except Exception:
+            pass
 
     def _update_send_button_for_tab(self) -> None:
         selected = self.request_tabs.select()
