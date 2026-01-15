@@ -30,6 +30,7 @@ class ModbusMasterApp:
         self.root = tk.Tk()
         self.root.title("Modbus Master")
         self.root.resizable(True, False)
+        self.root.geometry("760x480")
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self.serial = None
@@ -59,59 +60,80 @@ class ModbusMasterApp:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(3, weight=1)
+        frame.columnconfigure(4, weight=1)
+        frame.columnconfigure(2, weight=1)
 
         ttk.Label(frame, text="Port").grid(row=0, column=0, sticky="w", padx=4, pady=4)
         self.port_combo = ttk.Combobox(
             frame, textvariable=self.port_var, state="readonly", width=PORT_WIDTH
         )
-        self.port_combo.grid(row=0, column=1, sticky="ew", padx=4, pady=4)
+        self.port_combo.grid(
+            row=0, column=1, columnspan=3, sticky="ew", padx=4, pady=4
+        )
         self.refresh_button = ttk.Button(
             frame, text="Refresh", command=self.refresh_ports
         )
-        self.refresh_button.grid(row=0, column=2, sticky="w", padx=4, pady=4)
+        self.refresh_button.grid(row=0, column=4, sticky="w", padx=4, pady=4)
 
         ttk.Label(frame, text="Slave Addr").grid(
-            row=1, column=0, sticky="w", padx=4, pady=4
+            row=3, column=0, sticky="w", padx=4, pady=4
         )
         self.slave_spin = ttk.Spinbox(
             frame, from_=0, to=247, textvariable=self.slave_var, width=8
         )
-        self.slave_spin.grid(row=1, column=1, sticky="w", padx=4, pady=4)
+        self.slave_spin.grid(row=3, column=1, sticky="w", padx=4, pady=4)
 
-        ttk.Label(frame, text="Start Addr").grid(
-            row=2, column=0, sticky="w", padx=4, pady=4
-        )
-        self.start_addr_spin = ttk.Spinbox(
-            frame, from_=0, to=65535, textvariable=self.start_addr_var, width=8
-        )
-        self.start_addr_spin.grid(row=2, column=1, sticky="w", padx=4, pady=4)
-
-        ttk.Label(frame, text="End Addr").grid(
-            row=3, column=0, sticky="w", padx=4, pady=4
-        )
-        self.end_addr_spin = ttk.Spinbox(
-            frame, from_=0, to=65535, textvariable=self.end_addr_var, width=8
-        )
-        self.end_addr_spin.grid(row=3, column=1, sticky="w", padx=4, pady=4)
-
-        ttk.Label(frame, text="Min Regs").grid(
+        ttk.Label(frame, text="Start Addr:").grid(
             row=4, column=0, sticky="w", padx=4, pady=4
         )
-        self.min_regs_spin = ttk.Spinbox(
-            frame, from_=1, to=125, textvariable=self.min_regs_var, width=8
+        start_range_frame = ttk.Frame(frame)
+        start_range_frame.grid(
+            row=4, column=1, columnspan=4, sticky="w", padx=4, pady=4
         )
-        self.min_regs_spin.grid(row=4, column=1, sticky="w", padx=4, pady=4)
+        self.start_addr_spin = ttk.Spinbox(
+            start_range_frame,
+            from_=0,
+            to=65535,
+            textvariable=self.start_addr_var,
+            width=8,
+        )
+        self.start_addr_spin.grid(row=0, column=0, sticky="w")
+        ttk.Label(start_range_frame, text="->").grid(
+            row=0, column=1, sticky="w", padx=(6, 6)
+        )
+        ttk.Label(start_range_frame, text="End Addr:").grid(
+            row=0, column=2, sticky="w", padx=(0, 6)
+        )
+        self.end_addr_spin = ttk.Spinbox(
+            start_range_frame, from_=0, to=65535, textvariable=self.end_addr_var, width=8
+        )
+        self.end_addr_spin.grid(row=0, column=3, sticky="w")
 
-        ttk.Label(frame, text="Max Regs").grid(
+        ttk.Label(frame, text="Min Regs").grid(
             row=5, column=0, sticky="w", padx=4, pady=4
         )
-        self.max_regs_spin = ttk.Spinbox(
-            frame, from_=1, to=125, textvariable=self.max_regs_var, width=8
+        regs_range_frame = ttk.Frame(frame)
+        regs_range_frame.grid(
+            row=5, column=1, columnspan=4, sticky="w", padx=4, pady=4
         )
-        self.max_regs_spin.grid(row=5, column=1, sticky="w", padx=4, pady=4)
+        self.min_regs_spin = ttk.Spinbox(
+            regs_range_frame, from_=1, to=125, textvariable=self.min_regs_var, width=8
+        )
+        self.min_regs_spin.grid(row=0, column=0, sticky="w")
+        ttk.Label(regs_range_frame, text="->").grid(
+            row=0, column=1, sticky="w", padx=(6, 6)
+        )
+        ttk.Label(regs_range_frame, text="Max Regs").grid(
+            row=0, column=2, sticky="w", padx=(0, 6)
+        )
+        self.max_regs_spin = ttk.Spinbox(
+            regs_range_frame, from_=1, to=125, textvariable=self.max_regs_var, width=8
+        )
+        self.max_regs_spin.grid(row=0, column=3, sticky="w")
 
         ttk.Label(frame, text="Baud Rate").grid(
-            row=6, column=0, sticky="w", padx=4, pady=4
+            row=1, column=0, sticky="w", padx=4, pady=4
         )
         self.baud_combo = ttk.Combobox(
             frame,
@@ -120,10 +142,10 @@ class ModbusMasterApp:
             state="readonly",
             width=12,
         )
-        self.baud_combo.grid(row=6, column=1, sticky="w", padx=4, pady=4)
+        self.baud_combo.grid(row=1, column=1, sticky="w", padx=4, pady=4)
 
         ttk.Label(frame, text="Parity").grid(
-            row=7, column=0, sticky="w", padx=4, pady=4
+            row=2, column=0, sticky="w", padx=4, pady=4
         )
         self.parity_combo = ttk.Combobox(
             frame,
@@ -132,22 +154,22 @@ class ModbusMasterApp:
             state="readonly",
             width=10,
         )
-        self.parity_combo.grid(row=7, column=1, sticky="w", padx=4, pady=4)
+        self.parity_combo.grid(row=2, column=1, sticky="w", padx=4, pady=4)
 
         self.connect_button = ttk.Button(
             frame, text="Connect", command=self.toggle_connection, width=12
         )
-        self.connect_button.grid(row=8, column=0, sticky="w", padx=4, pady=10)
+        self.connect_button.grid(row=6, column=0, sticky="w", padx=4, pady=10)
         self.send_button = ttk.Button(
-            frame, text="Send", command=self.send_read_request, width=12
+            frame, text="Read (0x03)", command=self.send_read_request, width=12
         )
-        self.send_button.grid(row=8, column=1, sticky="w", padx=4, pady=10)
+        self.send_button.grid(row=6, column=1, sticky="w", padx=4, pady=10)
 
         ttk.Label(frame, text="Log").grid(
-            row=9, column=0, sticky="w", padx=4, pady=4
+            row=7, column=0, sticky="w", padx=4, pady=4
         )
         log_frame = ttk.Frame(frame)
-        log_frame.grid(row=9, column=1, columnspan=2, sticky="ew", padx=4, pady=4)
+        log_frame.grid(row=7, column=1, columnspan=4, sticky="ew", padx=4, pady=4)
         log_frame.columnconfigure(0, weight=1)
         self.log_text = tk.Text(
             log_frame, height=6, width=RESULT_WIDTH, wrap="none", state="disabled"
@@ -158,23 +180,23 @@ class ModbusMasterApp:
         self.log_text.configure(yscrollcommand=log_scroll.set)
 
         ttk.Label(frame, text="Status").grid(
-            row=10, column=0, sticky="w", padx=4, pady=4
+            row=8, column=0, sticky="w", padx=4, pady=4
         )
         self.status_entry = ttk.Entry(
             frame, textvariable=self.status_var, state="readonly", width=RESULT_WIDTH
         )
         self.status_entry.grid(
-            row=10, column=1, columnspan=2, sticky="ew", padx=4, pady=4
+            row=8, column=1, columnspan=4, sticky="ew", padx=4, pady=4
         )
 
         ttk.Label(frame, text="Progress").grid(
-            row=11, column=0, sticky="w", padx=4, pady=4
+            row=9, column=0, sticky="w", padx=4, pady=4
         )
         self.progress_entry = ttk.Entry(
             frame, textvariable=self.progress_var, state="readonly", width=RESULT_WIDTH
         )
         self.progress_entry.grid(
-            row=11, column=1, columnspan=2, sticky="ew", padx=4, pady=4
+            row=9, column=1, columnspan=4, sticky="ew", padx=4, pady=4
         )
 
         self.readonly_widgets = [self.port_combo, self.baud_combo, self.parity_combo]
