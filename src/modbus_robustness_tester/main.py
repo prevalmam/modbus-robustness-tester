@@ -21,8 +21,6 @@ DEFAULT_START_ADDRESS = 0
 DEFAULT_END_ADDRESS = 10
 DEFAULT_MIN_REGS = 1
 DEFAULT_MAX_REGS = 10
-DEFAULT_WRITE_ADDRESS = 0
-DEFAULT_WRITE_VALUE = 0
 DEFAULT_WINDOW_WIDTH = 760
 DEFAULT_WINDOW_HEIGHT = 600
 PORT_WIDTH = 30
@@ -43,8 +41,6 @@ class ModbusMasterApp:
         self.end_addr_var = tk.StringVar(value=f"{DEFAULT_END_ADDRESS:04d}")
         self.min_regs_var = tk.StringVar(value=str(DEFAULT_MIN_REGS))
         self.max_regs_var = tk.StringVar(value=str(DEFAULT_MAX_REGS))
-        self.write_addr_var = tk.StringVar(value=f"{DEFAULT_WRITE_ADDRESS:04d}")
-        self.write_value_var = tk.StringVar(value=str(DEFAULT_WRITE_VALUE))
         self.illegal_addr_var = tk.StringVar(value=f"{DEFAULT_START_ADDRESS:04d}")
         self.illegal_reg_num_var = tk.StringVar(value=f"{DEFAULT_MIN_REGS:04d}")
         self.baud_var = tk.StringVar(value=str(BAUD_RATES[3]))
@@ -116,9 +112,7 @@ class ModbusMasterApp:
         )
 
         self.read_tab = ttk.Frame(self.request_tabs, padding=8)
-        self.write_tab = ttk.Frame(self.request_tabs, padding=8)
         self.request_tabs.add(self.read_tab, text="Read (0x03)")
-        self.request_tabs.add(self.write_tab, text="Write Single (0x06)")
 
         ttk.Label(self.read_tab, text="Slave Addr").grid(
             row=0, column=0, sticky="w", padx=4, pady=4
@@ -157,29 +151,6 @@ class ModbusMasterApp:
             self.read_tab, from_=1, to=125, textvariable=self.max_regs_var, width=8
         )
         self.max_regs_spin.grid(row=2, column=3, sticky="w", padx=4, pady=4)
-
-        ttk.Label(self.write_tab, text="Slave Addr").grid(
-            row=0, column=0, sticky="w", padx=4, pady=4
-        )
-        self.write_slave_spin = ttk.Spinbox(
-            self.write_tab, from_=0, to=247, textvariable=self.slave_var, width=8
-        )
-        self.write_slave_spin.grid(row=0, column=1, sticky="w", padx=4, pady=4)
-
-        ttk.Label(self.write_tab, text="Register Addr").grid(
-            row=1, column=0, sticky="w", padx=4, pady=4
-        )
-        self.write_addr_spin = ttk.Spinbox(
-            self.write_tab, from_=0, to=65535, textvariable=self.write_addr_var, width=8
-        )
-        self.write_addr_spin.grid(row=1, column=1, sticky="w", padx=4, pady=4)
-        ttk.Label(self.write_tab, text="Value").grid(
-            row=1, column=2, sticky="w", padx=4, pady=4
-        )
-        self.write_value_spin = ttk.Spinbox(
-            self.write_tab, from_=0, to=65535, textvariable=self.write_value_var, width=8
-        )
-        self.write_value_spin.grid(row=1, column=3, sticky="w", padx=4, pady=4)
 
         self.illegal_tab = ttk.Frame(self.request_tabs, padding=8)
         self.request_tabs.add(self.illegal_tab, text="Illegal Func")
@@ -300,9 +271,6 @@ class ModbusMasterApp:
             self.end_addr_spin,
             self.min_regs_spin,
             self.max_regs_spin,
-            self.write_slave_spin,
-            self.write_addr_spin,
-            self.write_value_spin,
             self.illegal_slave_spin,
             self.illegal_addr_spin,
             self.illegal_reg_spin,
@@ -380,9 +348,7 @@ class ModbusMasterApp:
 
     def _update_send_button_for_tab(self) -> None:
         selected = self.request_tabs.select()
-        if selected == str(self.write_tab):
-            self.send_button.configure(text="Write (0x06)")
-        elif selected == str(self.illegal_tab):
+        if selected == str(self.illegal_tab):
             self.send_button.configure(text="Send (Illegal)")
         else:
             self.send_button.configure(text="Read (0x03)")
@@ -473,9 +439,7 @@ class ModbusMasterApp:
 
     def send_request(self) -> None:
         selected = self.request_tabs.select()
-        if selected == str(self.write_tab):
-            self.send_write_single_request()
-        elif selected == str(self.illegal_tab):
+        if selected == str(self.illegal_tab):
             self.send_illegal_func_request()
         else:
             self.send_read_request()
@@ -489,17 +453,6 @@ class ModbusMasterApp:
         self.status_var.set("Running sequence...")
         self.progress_var.set("0 / 0")
         thread = threading.Thread(target=self._send_read_request, daemon=True)
-        thread.start()
-
-    def send_write_single_request(self) -> None:
-        if not self.serial or not getattr(self.serial, "is_open", False):
-            messagebox.showerror("Not connected", "Please connect to a port first.")
-            return
-        self.stop_event.clear()
-        self.send_button.configure(state="disabled")
-        self.status_var.set("Running request...")
-        self.progress_var.set("0 / 1")
-        thread = threading.Thread(target=self._send_write_single_request, daemon=True)
         thread.start()
 
     def send_illegal_func_request(self) -> None:
@@ -592,28 +545,6 @@ class ModbusMasterApp:
         finally:
             self.root.after(0, self._restore_send_state)
 
-    def _send_write_single_request(self) -> None:
-        try:
-            slave_addr = int(self.slave_var.get())
-            write_addr = int(self.write_addr_var.get())
-            write_value = int(self.write_value_var.get())
-            self._validate_write_single(write_addr, write_value)
-            request = self._build_write_single_request(slave_addr, write_addr, write_value)
-            self.serial.reset_input_buffer()
-            self.serial.write(request)
-            response = self._read_response()
-            result_text = self._parse_write_single_response(response)
-            message = f"Write {write_addr:04d} = {write_value} -> {result_text}"
-            self.root.after(0, lambda line=message: self._append_log(line))
-            self.root.after(0, lambda: self.progress_var.set("1 / 1"))
-            self.root.after(0, lambda: self.status_var.set("Request done (1 request)"))
-        except Exception as exc:
-            error_text = f"Error: {exc}"
-            self.root.after(0, lambda: self._append_log(error_text))
-            self.root.after(0, lambda: self.status_var.set(error_text))
-        finally:
-            self.root.after(0, self._restore_send_state)
-
     def _send_illegal_func_request(self, func_codes: list[int]) -> None:
         try:
             slave_addr = int(self.slave_var.get())
@@ -686,23 +617,6 @@ class ModbusMasterApp:
                 address & 0xFF,
                 (quantity >> 8) & 0xFF,
                 quantity & 0xFF,
-            ]
-        )
-        crc = self._crc16(payload)
-        payload.extend(crc.to_bytes(2, byteorder="little"))
-        return bytes(payload)
-
-    def _build_write_single_request(
-        self, slave_addr: int, address: int, value: int
-    ) -> bytes:
-        payload = bytearray(
-            [
-                slave_addr & 0xFF,
-                0x06,
-                (address >> 8) & 0xFF,
-                address & 0xFF,
-                (value >> 8) & 0xFF,
-                value & 0xFF,
             ]
         )
         crc = self._crc16(payload)
@@ -782,12 +696,6 @@ class ModbusMasterApp:
             f"Addr {addr} -> [{values}] ({hex_registers}) "
             f"[Data {hex_value}] | RAW {raw_hex}"
         )
-
-    def _validate_write_single(self, address: int, value: int) -> None:
-        if not 0 <= address <= 0xFFFF:
-            raise ValueError("Register address must be between 0 and 65535.")
-        if not 0 <= value <= 0xFFFF:
-            raise ValueError("Value must be between 0 and 65535.")
 
     def _read_exact(self, length: int) -> bytes:
         if not self.serial:
